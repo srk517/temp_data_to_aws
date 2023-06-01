@@ -43,6 +43,7 @@ static const char *TAG = "MQTTS_EXAMPLE";
 static const char *message ="CONNECTED";
 
 static const char *TOPIC_TEST = "test/630f3f41376e9/l/47cf63a";
+static const char *TOPIC_MAIN ="$aws/rules/r1/630f3f41376e9/l/47cf63a"
 
 extern const uint8_t client_cert_pem_start[] asm("_binary_client_crt_start");
 extern const uint8_t client_cert_pem_end[] asm("_binary_client_crt_end");

@@ -40,10 +40,11 @@ esp_mqtt_client_handle_t client;
 
 static const char *TAG = "MQTTS_EXAMPLE";
 
-static const char *message ="CONNECTED";
+static const char *message ="HERE";
+const char *jsonmessage = "{\"message\":\"Hello\"}";
 
 static const char *TOPIC_TEST = "test/630f3f41376e9/l/47cf63a";
-static const char *TOPIC_MAIN ="$aws/rules/r1/630f3f41376e9/l/47cf63a"
+static const char *TOPIC_MAIN ="$aws/rules/r1/630f3f41376e9/l/47cf63a";
 
 extern const uint8_t client_cert_pem_start[] asm("_binary_client_crt_start");
 extern const uint8_t client_cert_pem_end[] asm("_binary_client_crt_end");
@@ -68,15 +69,6 @@ static void log_error_if_nonzero(const char *message, int error_code)
  * @param event_id The id for the received event.
  * @param event_data The data for the event, esp_mqtt_event_handle_t.
  */
-//////////////////////////ADC_TEMPERAUTE_SENSOR////////////////////////////////////
-
-
-
-
-
-//////////////////////////ADC_TEMPERAUTE_SENSOR_END////////////////////////////////////
-
-////////////////////////////sending data code starts///////////////////////////////////
 
 static void _data_handler(void *handler_args, esp_event_base_t base, int32_t event_id,void *event_data){
 bool once =true;
@@ -118,12 +110,16 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
 
-        msg_id = esp_mqtt_client_subscribe(client, "test/630f3f41376e9/l/47cf63a", 1);
-        esp_mqtt_client_publish(client,"test/630f3f41376e9/l/47cf63a",message,strlen(message),1,false);
-        ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+       // msg_id = esp_mqtt_client_subscribe(client, "test/630f3f41376e9/l/47cf63a", 1);
+       // esp_mqtt_client_publish(client, "test/630f3f41376e9/l/47cf63a" ,message,strlen(message), 1, 0);
+
+        msg_id = esp_mqtt_client_subscribe(client, "$aws/rules/r1/630f3f41376e9/l/47cf63a", 1);
+        esp_mqtt_client_publish(client, "$aws/rules/r1/630f3f41376e9/l/47cf63a" ,jsonmessage,strlen(jsonmessage), 1, 0);
+
+        //ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
         //msg_id = esp_mqtt_client_subscribe(client, "/topic/qos1", 1);
-        //ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);dfdfdf
+        //ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
         //msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
         //ESP_LOGI(TAG, "sent unsubscribe successful, msg_id=%d", msg_id);
@@ -134,7 +130,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
     case MQTT_EVENT_SUBSCRIBED:
         ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-       // msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
+        esp_mqtt_client_publish(client, "test/630f3f41376e9/l/47cf63a" ,message,strlen(message), 1, 0);
+       // msg_id = esp_mqtt_client_publish(client, "$aws/rules/r1/630f3f41376e9/l/47cf63a/qos1" ,"{"message":"hello"}", 0, 1, 0);
         //ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
         break;
     case MQTT_EVENT_UNSUBSCRIBED:
@@ -146,9 +143,9 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         break;
     case MQTT_EVENT_DATA:
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
-        //printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-       // printf("DATA=%.*s\r\n", event->data_len, event->data);
-        _data_handler(NULL,NULL,0,event);
+        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
+        printf("DATA=%.*s\r\n", event->data_len, event->data);
+        //_data_handler(NULL,NULL,0,event);
         
         //my_mqtt_data_handler
         break;
@@ -171,11 +168,12 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 static void mqtt_app_start(void)
 {
     const esp_mqtt_client_config_t mqtt_cfg = {
+        //.uri = "mqtts://iot.thingsty.com:8883/mqtt",
         .host = "iot.thingsty.com",
         .path = "/mqtt",
         .port = 8883,
         .client_id = "630f3f41376e947cf63a",
-        .transport =MQTT_TRANSPORT_OVER_SSL,//MQTT_TRANSPORT_UNKNOWN,// MQTT_TRANSPORT_OVER_TCP,//MQTT_TRANSPORT_OVER_SSL,
+        .transport =MQTT_TRANSPORT_OVER_SSL,//MQTT_TRANSPORT_OVER_SSL,//MQTT_TRANSPORT_UNKNOWN,// MQTT_TRANSPORT_OVER_TCP,//MQTT_TRANSPORT_OVER_SSL,
         .client_cert_pem = (const char *)client_cert_pem_start,
         .client_key_pem = (const char *)client_key_pem_start,
         .cert_pem = (const char *)server_cert_pem_start,

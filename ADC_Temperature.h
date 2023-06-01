@@ -21,7 +21,7 @@ float calculate_Temp(uint32_t adc_reading) {
     Vout=adc_reading * 3.3/4095;
     resistance = (10000*5)/Vout;
     resistance=resistance-10000;
-    printf("Resistance %f\t",resistance);
+   
 
     t1=(log(resistance/10000));
     td=t1/3950;

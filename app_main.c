@@ -40,11 +40,16 @@ esp_mqtt_client_handle_t client;
 
 static const char *TAG = "MQTTS_EXAMPLE";
 
-static const char *message ="HERE";
-const char *jsonmessage = "{\"message\":\"Hello\"}";
+int msg_id;
 
-static const char *TOPIC_TEST = "test/630f3f41376e9/l/47cf63a";
-static const char *TOPIC_MAIN ="$aws/rules/r1/630f3f41376e9/l/47cf63a";
+
+static const char *message ="HERE";
+const char *jsonmessage = "{\"temperature\":\"}";//-000\"}";
+
+static const char *PUBLISH = "$aws/rules/r1/630f3f41376e9/l/47cf63a";
+static const char *SUBSCRIBE = "630f3f41376e9/sub/l/47cf63a";
+static const char *TEST ="test/630f3f41376e9/l/47cf63a";
+static void _data_handler(void *handler_args, esp_event_base_t base, int32_t event_id,void *event_data);
 
 extern const uint8_t client_cert_pem_start[] asm("_binary_client_crt_start");
 extern const uint8_t client_cert_pem_end[] asm("_binary_client_crt_end");
@@ -76,13 +81,13 @@ char data_arr[40];
 int count=0;
 esp_mqtt_event_handle_t event = (esp_mqtt_event_handle_t) event_data;
 client= event->client;
-while(once){
+/*while(once){
 snprintf(data_arr,sizeof(data_arr),"Sending Temperature Reading Now\n");
 esp_mqtt_client_publish(event->client,TOPIC_TEST,data_arr,strlen(data_arr),1,0);
 printf("Count = %d\n",count);
 count++;
 once=false;
-}
+}*/
 adc1_config_width(ADC_WIDTH);
     adc1_config_channel_atten(ADC_CHANNEL, ADC_ATTEN_DB_11);
     while(1)
@@ -90,13 +95,20 @@ adc1_config_width(ADC_WIDTH);
         uint32_t adc_reading = adc1_get_raw(ADC_CHANNEL);
                 temperature= calculate_Temp(adc_reading);
                 printf("Temperature %.2f\n",temperature);
-               snprintf(data_arr, sizeof(data_arr), "%.2f", temperature);
-               esp_mqtt_client_publish(event->client,TOPIC_TEST,data_arr,strlen(data_arr),1,0);
+
+                int temperature_int = (int)temperature;
+
+              snprintf(data_arr, sizeof(data_arr), "{\"temperature\":\"%d\"}", temperature_int);
+              
+               printf("Concatenated String: %s\n", data_arr);
+             //  esp_mqtt_client_publish(event->client,TOPIC_TEST,data_arr,strlen(data_arr),1,0);
+               esp_mqtt_client_publish(client, PUBLISH ,data_arr, sizeof(data_arr), 1, 0);
+
                 vTaskDelay(1000/portTICK_PERIOD_MS);
     }
 
 
-esp_mqtt_client_unsubscribe(client, TOPIC_TEST);
+esp_mqtt_client_unsubscribe(client, SUBSCRIBE);
 }
 
 ////////////////////////////sending data code ends///////////////////////////////////
@@ -105,18 +117,18 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%d", base, event_id);
     esp_mqtt_event_handle_t event = event_data;
     esp_mqtt_client_handle_t client = event->client;
-    int msg_id;
+    
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
 
-       // msg_id = esp_mqtt_client_subscribe(client, "test/630f3f41376e9/l/47cf63a", 1);
-       // esp_mqtt_client_publish(client, "test/630f3f41376e9/l/47cf63a" ,message,strlen(message), 1, 0);
+        //msg_id = esp_mqtt_client_subscribe(client, "test/630f3f41376e9/l/47cf63a", 1);
+        //esp_mqtt_client_publish(client, "test/630f3f41376e9/l/47cf63a" ,message,strlen(message), 1, 0);
 
-        msg_id = esp_mqtt_client_subscribe(client, "$aws/rules/r1/630f3f41376e9/l/47cf63a", 1);
-        esp_mqtt_client_publish(client, "$aws/rules/r1/630f3f41376e9/l/47cf63a" ,jsonmessage,strlen(jsonmessage), 1, 0);
+        msg_id = esp_mqtt_client_subscribe(client, SUBSCRIBE, 1);
+        //esp_mqtt_client_publish(client, "$aws/rules/r1/630f3f41376e9/l/47cf63a" ,jsonmessage,strlen(jsonmessage), 1, 0);
 
-        //ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+        ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
         //msg_id = esp_mqtt_client_subscribe(client, "/topic/qos1", 1);
         //ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
@@ -130,22 +142,29 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
     case MQTT_EVENT_SUBSCRIBED:
         ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-        esp_mqtt_client_publish(client, "test/630f3f41376e9/l/47cf63a" ,message,strlen(message), 1, 0);
+
+        // msg_id = esp_mqtt_client_subscribe(client, SUBSCRIBE, 1);
+         msg_id = esp_mqtt_client_publish(client, PUBLISH ,"{\"temperature\":\"-169\"}", strlen("{\"temperature\":\"-169\",}"), 1, 0);
+        ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+        //msg_id = esp_mqtt_client_publish(client, PUBLISH ,message,strlen(message), 1, 0);
        // msg_id = esp_mqtt_client_publish(client, "$aws/rules/r1/630f3f41376e9/l/47cf63a/qos1" ,"{"message":"hello"}", 0, 1, 0);
-        //ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+       // ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
         break;
     case MQTT_EVENT_UNSUBSCRIBED:
         ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
         break;
     case MQTT_EVENT_PUBLISHED:
         ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
-       
+         _data_handler(NULL,NULL,0,event);
+       // msg_id = esp_mqtt_client_publish(client, PUBLISH ,message,strlen(message), 1, 0);
+        //msg_id = esp_mqtt_client_publish(client, PUBLISH ,"{\"temperature\":\"-179\"}", strlen("{\"temperature\":\"-169\",}"), 1, 0);
+        // ESP_LOGI(TAG, "SENT PUBLISH successful, msg_id=%d", msg_id);
         break;
     case MQTT_EVENT_DATA:
         ESP_LOGI(TAG, "MQTT_EVENT_DATA");
         printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
         printf("DATA=%.*s\r\n", event->data_len, event->data);
-        //_data_handler(NULL,NULL,0,event);
+      //  _data_handler(NULL,NULL,0,event);
         
         //my_mqtt_data_handler
         break;

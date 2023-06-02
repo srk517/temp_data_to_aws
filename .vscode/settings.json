@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "cjson.h": "c"
+        "cjson.h": "c",
+        "stdint.h": "c",
+        "json_parser.h": "c"
     }
 }

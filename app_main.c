@@ -23,7 +23,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
-
+#include "json_parser.h"
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
@@ -95,14 +95,21 @@ adc1_config_width(ADC_WIDTH);
         uint32_t adc_reading = adc1_get_raw(ADC_CHANNEL);
                 temperature= calculate_Temp(adc_reading);
                 printf("Temperature %.2f\n",temperature);
+                const char* para="temperature";
+                int temp_int = (int)temperature;
 
-                int temperature_int = (int)temperature;
-
-              snprintf(data_arr, sizeof(data_arr), "{\"temperature\":\"%d\"}", temperature_int);
+              //snprintf(data_arr, sizeof(data_arr), "{\"temperature\":\"%d\"}", temp_int);
+             snprintf(data_arr, sizeof(data_arr), "{\"%s\":\"%d\"}", para,temp_int);
               
-               printf("Concatenated String: %s\n", data_arr);
+              // printf("Concatenated String: %s\n", data_arr);
              //  esp_mqtt_client_publish(event->client,TOPIC_TEST,data_arr,strlen(data_arr),1,0);
-               esp_mqtt_client_publish(client, PUBLISH ,data_arr, sizeof(data_arr), 1, 0);
+            // esp_mqtt_client_publish(client, PUBLISH ,data_arr, strlen(data_arr), 1, 0);
+             //esp_mqtt_client_publish(client, PUBLISH ,data_arr, strlen(data_arr), 1, 0);
+              char *jsonString =  parseIntegerToJSON(para, temp_int);
+             // printf("JSON String: %s\n", jsonString);
+              //printf("{\"temperature\":\"-169\"}");
+
+               esp_mqtt_client_publish(client, PUBLISH ,jsonString, strlen(jsonString), 1, 0);
 
                 vTaskDelay(1000/portTICK_PERIOD_MS);
     }

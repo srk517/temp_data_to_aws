@@ -32,9 +32,10 @@
 #include "mqtt_client.h"
 
 #define ADC_WIDTH       ADC_WIDTH_BIT_12
-#define ADC_CHANNEL     ADC_CHANNEL_3
+#define NTC2     ADC_CHANNEL_3
+#define NTC1     ADC2_CHANNEL_5   
 
-float temperature;
+float temp1,temp2;
 
 esp_mqtt_client_handle_t client;
 
@@ -42,7 +43,7 @@ static const char *TAG = "MQTTS_EXAMPLE";
 
 int msg_id;
 
-
+int raw_temp_reading_1;
 static const char *message ="HERE";
 const char *jsonmessage = "{\"temperature\":\"}";//-000\"}";
 
@@ -88,26 +89,36 @@ printf("Count = %d\n",count);
 count++;
 once=false;
 }*/
-adc1_config_width(ADC_WIDTH);
-    adc1_config_channel_atten(ADC_CHANNEL, ADC_ATTEN_DB_11);
+     const char* para="temperature 1";
+     const char* para2="temperature 2";
+
+    adc1_config_width(ADC_WIDTH);
+    adc1_config_channel_atten(NTC2, ADC_ATTEN_DB_11);
+    adc1_config_width(ADC_WIDTH);
+    adc2_config_channel_atten(NTC1, ADC_ATTEN_DB_11);
     while(1)
     {
-        uint32_t adc_reading = adc1_get_raw(ADC_CHANNEL);
-                temperature= calculate_Temp(adc_reading);
-                printf("Temperature %.2f\n",temperature);
-                const char* para="temperature";
-                int temp_int = (int)temperature;
-
+         adc2_get_raw(NTC1,ADC_WIDTH, &raw_temp_reading_1);
+        uint32_t raw_temp_reading_2 = adc1_get_raw(NTC2);
+                temp1 = calculate_Temp(raw_temp_reading_1);
+                temp2= calculate_Temp(raw_temp_reading_2);
+                printf("Temperature NTC1\t%.2f\n",temp1);
+                printf("Temperature NTC2\t%.2f\n",temp2);
+               
+                
+                int temp_int_1 = (int)temp1;
+                int temp_int_2 = (int)temp2;
+               
+               
               //snprintf(data_arr, sizeof(data_arr), "{\"temperature\":\"%d\"}", temp_int);
-             snprintf(data_arr, sizeof(data_arr), "{\"%s\":\"%d\"}", para,temp_int);
+             //snprintf(data_arr, sizeof(data_arr), "{\"%s\":\"%d\"}", para,temp_int);
               
               // printf("Concatenated String: %s\n", data_arr);
              //  esp_mqtt_client_publish(event->client,TOPIC_TEST,data_arr,strlen(data_arr),1,0);
             // esp_mqtt_client_publish(client, PUBLISH ,data_arr, strlen(data_arr), 1, 0);
              //esp_mqtt_client_publish(client, PUBLISH ,data_arr, strlen(data_arr), 1, 0);
-              char *jsonString =  parseIntegerToJSON(para, temp_int);
-             // printf("JSON String: %s\n", jsonString);
-              //printf("{\"temperature\":\"-169\"}");
+              char *jsonString =  parseIntegerToJSON(para,para2, temp_int_1,temp_int_2);
+              printf("JSON String: %s\n", jsonString);
 
                esp_mqtt_client_publish(client, PUBLISH ,jsonString, strlen(jsonString), 1, 0);
 

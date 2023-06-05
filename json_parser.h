@@ -2,14 +2,16 @@
 #define JSON_PARSER_H
 #include <cJSON.h>
 
-char* parseIntegerToJSON(const char *parameter, int value) {
+char* parseIntegerToJSON(const char *parameter1,const char *parameter2, int value1,int value2) {
     
-    char valueString[20];
-    sprintf(valueString, "%d", value);
-    
+    char valueString1[20];
+    char valueString2[20];
+    sprintf(valueString1, "%d", value1);
+    sprintf(valueString2, "%d", value2);
     // Create a cJSON object to hold the parameter
     cJSON *root = cJSON_CreateObject();
-    cJSON_AddStringToObject(root, parameter, valueString);
+    cJSON_AddStringToObject(root, parameter1, valueString1);
+    cJSON_AddStringToObject(root, parameter2, valueString2);
 
     // Convert the cJSON object to a string
     char *jsonString = cJSON_PrintUnformatted(root);

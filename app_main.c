@@ -87,7 +87,7 @@ snprintf(data_arr,sizeof(data_arr),"Sending Temperature Reading Now\n");
 esp_mqtt_client_publish(event->client,TOPIC_TEST,data_arr,strlen(data_arr),1,0);
 printf("Count = %d\n",count);
 count++;
-once=false;
+once=false;sjhgdjhdgjsdgjsfgj
 }*/
      const char* para="temperature 1";
      const char* para2="temperature 2";
